@@ -1,0 +1,150 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>영상 한 편을 2분 20초에 만드는 파이프라인 — 무인 일지</title>
+<meta name="description" content="저작권 안전한 소재 고르기부터 음악 붙이기까지, 무인 릴스 파이프라인 전 과정">
+<meta property="og:title" content="영상 한 편을 2분 20초에 만드는 파이프라인">
+<meta property="og:description" content="저작권 안전한 소재 고르기부터 음악 붙이기까지, 무인 릴스 파이프라인 전 과정">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#08080a;--fg:#f4f1ea;--mute:#8b8f99;--acc:#ff4a1c;--line:#22252c;--card:#101318}
+body{background:var(--bg);color:var(--fg);font-family:Pretendard,-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+line-height:1.75;-webkit-font-smoothing:antialiased}
+.wrap{max-width:720px;margin:0 auto;padding:28px 22px 96px}
+header{display:flex;justify-content:space-between;align-items:baseline;
+border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:40px}
+header .s{font-weight:800;font-size:15px;letter-spacing:-.2px}
+header .n{color:var(--acc);font-weight:800;font-size:15px}
+h1{font-size:34px;line-height:1.28;font-weight:800;letter-spacing:-.6px;margin:6px 0 14px}
+h1 em{font-style:normal;color:var(--acc)}
+.lead{color:var(--mute);font-size:16px;margin-bottom:34px}
+h2{font-size:22px;font-weight:800;margin:44px 0 12px;letter-spacing:-.3px}
+h3{font-size:17px;font-weight:800;margin:26px 0 8px;color:#dfe3ea}
+p{margin:12px 0;font-size:16px;color:#d7dbe2}
+ul,ol{margin:12px 0 12px 20px}li{margin:7px 0;font-size:16px;color:#d7dbe2}
+code{background:#161a20;border:1px solid var(--line);border-radius:6px;padding:2px 7px;
+font-family:ui-monospace,Consolas,monospace;font-size:14px;color:#ffd9c9}
+pre{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;
+overflow-x:auto;margin:16px 0}
+pre code{background:none;border:0;padding:0;color:#cfd6e2;font-size:13.5px;line-height:1.7}
+.rule{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--acc);
+border-radius:12px;padding:16px 18px;margin:18px 0}
+.rule b{color:#fff}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:15px}
+th,td{border-bottom:1px solid var(--line);padding:10px 8px;text-align:left;color:#d7dbe2}
+th{color:var(--mute);font-weight:700;font-size:13px}
+.num{color:var(--acc);font-weight:800}
+a{color:var(--acc);text-decoration:none;border-bottom:1px solid rgba(255,74,28,.4)}
+footer{margin-top:70px;border-top:1px solid var(--line);padding-top:22px;color:var(--mute);font-size:14px}
+footer b{color:var(--acc)}
+.idx{display:block;background:var(--card);border:1px solid var(--line);border-radius:14px;
+padding:18px 20px;margin:12px 0;border-bottom:1px solid var(--line)}
+.idx .t{font-weight:800;font-size:18px;color:#fff}
+.idx .d{color:var(--mute);font-size:14px;margin-top:4px}
+</style></head><body><div class="wrap">
+<header><span class="s">무인 일지</span><span class="n">01</span></header>
+
+<h1>영상 한 편을 <em>2분 20초</em>에<br>만드는 파이프라인</h1>
+<p class="lead">편집 프로그램 없이 스크립트로 릴스를 만듭니다. 저작권에 안 걸리는 소재를 고르는 것부터
+음악을 붙이는 것까지, 순서대로 적었습니다. 그대로 따라 하면 돌아갑니다.</p>
+
+<div class="rule"><b>먼저 알아둘 것.</b> 이 방식의 핵심은 편집 실력이 아니라
+<b>저작권이 확인된 소재만 자동으로 걸러내는 규칙</b>입니다. 여기가 무너지면 나머지는 의미가 없습니다.</div>
+
+<h2>1. 소재 — 저작권이 확인된 것만 고른다</h2>
+<p>유튜브에는 업로더가 직접 거는 <b>크리에이티브 커먼즈 저작자표시(CC BY)</b> 라이선스가 있습니다.
+검색 단계에서 이것만 남기면 소재 풀 자체가 안전해집니다.</p>
+<p>유튜브 사이트에서도 됩니다. 검색 후 <code>필터 → 기능 → 크리에이티브 커먼즈</code>.
+자동화하려면 Data API에 파라미터 하나만 더 붙이면 됩니다.</p>
+<pre><code>GET https://www.googleapis.com/youtube/v3/search
+  ?part=snippet
+  &amp;q=AI+automation
+  &amp;type=video
+  &amp;order=viewCount
+  &amp;videoLicense=creativeCommon      &lt;-- 이 줄이 전부입니다
+  &amp;publishedAfter=2026-01-01T00:00:00Z
+  &amp;key=YOUR_KEY</code></pre>
+
+<h3>검색만 믿으면 안 됩니다</h3>
+<p>검색 필터를 통과해도 개별 영상을 한 번 더 확인하세요. <code>videos</code> 엔드포인트의
+<code>status.license</code> 값이 <code>creativeCommon</code> 인 것만 남깁니다.</p>
+<pre><code>GET .../videos?part=status,statistics&amp;id=VIDEO_ID
+→ status.license == "creativeCommon"  이면 통과
+→ "youtube"  이면 표준 저작권. 버립니다.</code></pre>
+<div class="rule"><b>여기서 가장 중요한 경고.</b> CC 표기는 <b>업로더가 스스로 건 것</b>입니다.
+남의 영상을 퍼와서 CC를 걸어둔 채널이 실제로 있습니다. 그런 걸 쓰면 우리가 침해자가 됩니다.
+채널을 열어 자기 영상을 올리는 곳인지 눈으로 확인하고, 의심되면 그냥 버리세요.
+소재는 얼마든지 있습니다.</div>
+
+<h2>2. 내용 — 자막으로 고른다</h2>
+<p>영상을 다 보고 있을 수 없습니다. 자막을 받아서 어디를 쓸지 정합니다.
+제목만 보고 내용을 단정하면 틀린 소개를 하게 됩니다.</p>
+<pre><code>pip install youtube-transcript-api
+
+from youtube_transcript_api import YouTubeTranscriptApi
+segs = list(YouTubeTranscriptApi().fetch(VIDEO_ID))
+# segs[i].start / .duration / .text</code></pre>
+<p>자막 전문을 LLM에 넣고 <b>"가장 보여줄 만한 5초 구간의 시작 시각"</b>을 받아옵니다.
+키워드 개수로 고르면 "타임스탬프는 아래에 있습니다" 같은 데가 뽑힙니다. 직접 해봤고 실패했습니다.</p>
+
+<h2>3. 클립 — 필요한 구간만 받는다</h2>
+<p>영상 전체를 받을 이유가 없습니다. 구간만 잘라서 받으면 5초짜리가 1초 만에 떨어집니다.</p>
+<pre><code>yt-dlp --no-playlist -f "b[ext=mp4][height&lt;=720]/b" \
+  --download-sections "*180-185" \
+  -o "clip.%(ext)s" "https://www.youtube.com/watch?v=VIDEO_ID"</code></pre>
+
+<h2>4. 화면 — 9:16으로 앉힌다</h2>
+<p>가로 영상을 세로에 억지로 꽉 채우면 얼굴이 잘립니다. 위쪽에 얹고 아래를 자막 자리로 비우는 게 낫습니다.</p>
+<pre><code>ffmpeg -i clip.mp4 -vf "scale=1080:-2,pad=1080:1920:0:430:color=#08080A" -an stage.mp4</code></pre>
+<table><tr><th>항목</th><th>값</th><th>이유</th></tr>
+<tr><td>해상도</td><td>1080 x 1920</td><td>릴스 규격</td></tr>
+<tr><td>프레임</td><td>30fps</td><td>파일이 가볍고 충분함</td></tr>
+<tr><td>자막 위치</td><td>상단 안전영역 아래</td><td>하단은 앱 UI가 가림</td></tr>
+<tr><td>컷 길이</td><td>0.6 ~ 1.0초</td><td>초반 3초를 넘기기 위해</td></tr>
+<tr><td>한 화면 자막</td><td>1줄, 10자 이내</td><td>0.8초에 2줄은 못 읽음</td></tr></table>
+
+<h2>5. 소리 — 두 가지를 반드시 지킨다</h2>
+<div class="rule"><b>하나.</b> 가져온 클립의 <b>원본 소리는 반드시 죽입니다</b>.
+CC BY는 영상에 걸린 것이지 그 안에 깔린 음악까지 CC인 게 아닙니다.
+원본 소리를 실으면 플랫폼 음원 감지에 걸립니다.</div>
+<div class="rule"><b>둘.</b> API로 발행하면 인스타그램 음원 라이브러리를 붙일 수 없습니다.
+음악은 업로드 전에 영상 파일에 직접 섞어 넣어야 합니다.</div>
+<p>그래서 저작권 없는 음원을 미리 모아둡니다. Openverse API에 <code>license=cc0</code>를 걸면
+원본(Freesound 등)까지 자동으로 받을 수 있습니다.</p>
+<pre><code>GET https://api.openverse.org/v1/audio/?q=dark+electronic+loop&amp;license=cc0
+
+# 음량은 반드시 맞춥니다. 안 맞추면 어떤 건 안 들리고 어떤 건 찢어집니다.
+ffmpeg -i bgm.mp3 -af "loudnorm=I=-14:TP=-1.5:LRA=11" -ar 48000 -ac 2 audio.wav</code></pre>
+<div class="rule"><b>실패담 하나.</b> 처음엔 음악을 직접 합성했습니다. 55Hz 서브 베이스 중심으로 짰더니
+휴대폰 스피커에서 통째로 안 들렸습니다. 폰은 200~400Hz 아래를 거의 못 냅니다.
+에너지를 <b>300Hz~4kHz</b>에 두세요. 그게 안 되면 그냥 CC0 실음원을 쓰는 게 낫습니다.</div>
+
+<h2>6. 조립과 인코딩</h2>
+<pre><code>ffmpeg -framerate 30 -i frames/f%04d.jpg -i audio.wav \
+  -c:v libx264 -preset slow -crf 19 -pix_fmt yuv420p \
+  -c:a aac -b:a 192k -shortest -movflags +faststart out.mp4</code></pre>
+<p><code>-pix_fmt yuv420p</code> 와 <code>+faststart</code> 는 빼면 안 됩니다.
+없으면 어떤 기기에서 재생이 안 되거나 로딩이 느립니다.</p>
+
+<h2>7. 하지 말아야 할 것</h2>
+<ul>
+<li>표준 저작권 영상 클립을 쓰는 것 — 출처를 적어도 면책되지 않습니다</li>
+<li>가져온 클립만으로 영상을 채우는 것 — 플랫폼이 비원본 반복 계정을 추천에서 제외할 수 있습니다</li>
+<li>원본 오디오를 그대로 싣는 것</li>
+<li>출처 없는 수치를 자막에 박는 것</li>
+</ul>
+<p>클립은 편당 3~4개, 하나당 5초 이내로 쓰고 나머지는 자기 편집으로 채우는 게 안전합니다.</p>
+
+<h2>정리</h2>
+<table><tr><th>단계</th><th>도구</th><th>핵심</th></tr>
+<tr><td><span class="num">1</span> 소재</td><td>YouTube Data API</td><td>videoLicense=creativeCommon</td></tr>
+<tr><td><span class="num">2</span> 검증</td><td>videos.status.license</td><td>자칭이므로 채널도 확인</td></tr>
+<tr><td><span class="num">3</span> 내용</td><td>youtube-transcript-api</td><td>제목 말고 자막으로 판단</td></tr>
+<tr><td><span class="num">4</span> 클립</td><td>yt-dlp</td><td>--download-sections</td></tr>
+<tr><td><span class="num">5</span> 화면</td><td>ffmpeg</td><td>1080x1920, 하단 비우기</td></tr>
+<tr><td><span class="num">6</span> 소리</td><td>Openverse CC0</td><td>원본 음소거 + loudnorm</td></tr>
+</table>
+<p>여기까지가 한 편입니다. 저희 기준으로 전 과정이 2분 20초 걸렸고, 추가 비용은 들지 않았습니다.</p>
+
+<footer>사람 없이 돌아가는 것들을 기록합니다 · <b>@moai.agent</b><br>
+이 문서는 공개 API와 공개 도구 사용법만 담고 있습니다.</footer>
+</div></body></html>
