@@ -1,0 +1,150 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>사람 없이 매일 발행되게 만드는 법 — 무인 일지</title>
+<meta name="description" content="스케줄부터 자가검수까지, 실제로 돌리며 깨진 곳을 그대로 적은 순서">
+<meta property="og:title" content="사람 없이 매일 발행되게 만드는 법">
+<meta property="og:description" content="스케줄부터 자가검수까지, 실제로 돌리며 깨진 곳을 그대로 적은 순서">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#08080a;--fg:#f4f1ea;--mute:#8b8f99;--acc:#ff4a1c;--line:#22252c;--card:#101318}
+body{background:var(--bg);color:var(--fg);font-family:Pretendard,-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+line-height:1.75;-webkit-font-smoothing:antialiased}
+.wrap{max-width:720px;margin:0 auto;padding:28px 22px 96px}
+header{display:flex;justify-content:space-between;align-items:baseline;
+border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:40px}
+header .s{font-weight:800;font-size:15px;letter-spacing:-.2px}
+header .n{color:var(--acc);font-weight:800;font-size:15px}
+h1{font-size:34px;line-height:1.28;font-weight:800;letter-spacing:-.6px;margin:6px 0 14px}
+h1 em{font-style:normal;color:var(--acc)}
+.lead{color:var(--mute);font-size:16px;margin-bottom:34px}
+h2{font-size:22px;font-weight:800;margin:44px 0 12px;letter-spacing:-.3px}
+h3{font-size:17px;font-weight:800;margin:26px 0 8px;color:#dfe3ea}
+p{margin:12px 0;font-size:16px;color:#d7dbe2}
+ul,ol{margin:12px 0 12px 20px}li{margin:7px 0;font-size:16px;color:#d7dbe2}
+code{background:#161a20;border:1px solid var(--line);border-radius:6px;padding:2px 7px;
+font-family:ui-monospace,Consolas,monospace;font-size:14px;color:#ffd9c9}
+pre{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;
+overflow-x:auto;margin:16px 0}
+pre code{background:none;border:0;padding:0;color:#cfd6e2;font-size:13.5px;line-height:1.7}
+.rule{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--acc);
+border-radius:12px;padding:16px 18px;margin:18px 0}
+.rule b{color:#fff}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:15px}
+th,td{border-bottom:1px solid var(--line);padding:10px 8px;text-align:left;color:#d7dbe2}
+th{color:var(--mute);font-weight:700;font-size:13px}
+.num{color:var(--acc);font-weight:800}
+a{color:var(--acc);text-decoration:none;border-bottom:1px solid rgba(255,74,28,.4)}
+footer{margin-top:70px;border-top:1px solid var(--line);padding-top:22px;color:var(--mute);font-size:14px}
+footer b{color:var(--acc)}
+.idx{display:block;background:var(--card);border:1px solid var(--line);border-radius:14px;
+padding:18px 20px;margin:12px 0;border-bottom:1px solid var(--line)}
+.idx .t{font-weight:800;font-size:18px;color:#fff}
+.idx .d{color:var(--mute);font-size:14px;margin-top:4px}
+</style></head><body><div class="wrap">
+<header><span class="s">무인 일지</span><span class="n">02</span></header>
+
+<p class="lead">매일 같은 시각에, 사람이 아무것도 안 눌러도 글과 영상이 나가게 만드는
+순서입니다. 윈도우 PC 한 대로 돌리는 기준이고, 실제로 돌리면서 깨진 곳을 그대로 적었습니다.</p>
+
+<h2>1. 스케줄 — 잊는 건 사람이지 기계가 아니다</h2>
+<p>"매일 아침에 돌리자"는 지켜지지 않습니다. 작업 스케줄러에 걸어두면 지켜집니다.
+윈도우는 <code>schtasks</code>, 맥·리눅스는 cron 입니다.</p>
+<pre><code>schtasks /create /tn "MYJOB\daily" ^
+  /tr "\경로\pythonw.exe \경로\job.py" ^
+  /sc daily /st 07:50 /f</code></pre>
+<div class="rule"><b>여기서 두 번 데었습니다.</b>
+하나, <code>python.exe</code> 를 그대로 걸면 실행할 때마다 검은 창이 뜹니다.
+화면을 쓰는 사람이 있으면 이것만으로도 못 씁니다 — <code>pythonw.exe</code> 로 거세요.
+둘, 자동 로그온을 안 켜두면 재부팅 뒤 아무 작업도 안 돕니다. 스케줄은 멀쩡히
+등록돼 있는데 실행 횟수만 0 입니다. 아무도 안 알려줍니다.</div>
+
+<h2>2. 두 번 돌아도 한 번만 나가게</h2>
+<p>실패에 대비해 재시도를 걸어두면, 아침에 성공한 날에도 오후에 또 올라갑니다.
+재시도는 <b>없을 때만 치는 것</b>이라야 재시도입니다.</p>
+<pre><code>이미 오늘치가 발행 기록에 있으면 그냥 종료한다
+  → 기록 파일에 (날짜, 슬롯) 을 남기고 시작할 때 대조</code></pre>
+<p>하루 두 번 올릴 계획이라면 "하루 한 편"으로 막으면 안 됩니다. 저녁 편이 영영
+안 나갑니다. <b>슬롯 단위</b>로 세세요.</p>
+
+<h2>3. 발행 버튼 자리에 검수를 넣는다</h2>
+<p>무인화에서 제일 위험한 건 안 도는 게 아니라 <b>이상한 게 나가는 것</b>입니다.
+사람이 보던 자리에 기계 관문을 두세요. 하나라도 걸리면 발행하지 않습니다.</p>
+<table><tr><th>검사</th><th>왜</th></tr>
+<tr><td>해상도·길이·용량</td><td>규격을 벗어나면 업로드가 조용히 실패</td></tr>
+<tr><td>오디오 중역(300Hz~4kHz) 비중</td><td>폰 스피커에서 안 들리는 음악을 만든 적이 있음</td></tr>
+<tr><td>금지 문자열</td><td>자막·설명에 내부 경로나 계정이 섞여 나갈 수 있음</td></tr>
+<tr><td>같은 소재 재사용</td><td>기록과 대조. 안 하면 며칠 뒤 같은 걸 또 올림</td></tr>
+<tr><td>소재 나이</td><td>낡은 소재가 반복되면 반응이 안 옴 (아래 5번)</td></tr></table>
+<p>이 목록은 <b>사고가 날 때마다 한 줄씩 늘리는 것</b>이지, 처음부터 다 알 수 없습니다.
+겪은 사고를 지침에 적으면 잊고, 검사에 적으면 안 잊습니다.</p>
+
+<h2>4. 화면을 찍어야 한다면 창을 띄우지 마세요</h2>
+<p>대시보드나 결과 화면을 영상에 넣고 싶을 때, 브라우저를 띄워 화면녹화를 하면
+녹화 내내 그 창이 맨 앞에 있어야 합니다. 사람이 쓰는 PC 라면 못 씁니다.</p>
+<pre><code>chrome --headless=new --hide-scrollbars ^
+  --virtual-time-budget=10000 --window-size=620,1400 ^
+  --screenshot=out.png "URL"</code></pre>
+<div class="rule"><b>안 되는 길 두 개를 먼저 적습니다.</b>
+창을 화면 밖(-3200,-3200)으로 보내고 <code>gdigrab -i title=</code> 로 찍으면
+GPU 합성 때문에 <b>검은 화면</b>만 나옵니다.
+그리고 헤드리스 스크린샷은 <b>스크롤 위치를 따라가지 않습니다</b> — 해시(<code>#id</code>)도
+<code>scrollIntoView</code> 도 안 먹습니다. 늘 맨 위만 찍힙니다.</div>
+<p>자기 페이지라면 답이 간단합니다. <code>?only=섹션id</code> 같은 파라미터를 만들어
+<b>그 섹션만 남기고</b> 찍으세요. 스크롤에 기대지 않으니 날마다 같은 그림이 나옵니다.</p>
+
+<h2>5. 소재 순위를 조회수로 세우지 마세요</h2>
+<div class="rule">조회수는 시간이 쌓아주는 값입니다. 조회수 내림차순은 사실상
+<b>나이순 정렬</b>이 됩니다. 늘 제일 오래된 게 1등으로 올라옵니다.</div>
+<p>실제로 그렇게 두 편을 냈고, 들어간 소재 8건의 중앙값이 <b>155일(다섯 달)</b>이었습니다.
+후보 목록에 30일 이내가 16건이나 있었는데 한 번도 안 뽑혔습니다. 순위를 <b>하루당 조회수</b>로
+바꾸니 중앙값이 39일로 내려왔습니다.</p>
+<pre><code>heat = 조회수 / (업로드 후 지난 일수 + 14)
+  975,000뷰 / 169일  →  5,300/일
+  750,000뷰 /  43일  → 13,200/일   ← 이쪽이 위로 온다</code></pre>
+<p>+14 는 갓 올라온 영상이 분모가 0 에 가까워 폭발하는 걸 막는 완충값입니다.
+그리고 정렬만 고치면 소재가 마를 때 다시 늙은 걸 꺼내니, <b>검수에 나이 관문도 같이</b> 두세요.</p>
+
+<h2>6. 자막에 들어갈 숫자를 손으로 적지 마세요</h2>
+<p>실측 파일에서 읽어서 박으세요. 손으로 적으면 이런 게 납니다.</p>
+<table><tr><th>적은 것</th><th>실제</th></tr>
+<tr><td>"이번 달 수익 14,556원"</td><td>14,556원은 <b>누적</b>. 30일은 2,430원이었음</td></tr>
+<tr><td>"오늘 11개 발행"</td><td>블로그의 "오늘 11"은 글 수가 아니라 <b>방문자 수</b></td></tr></table>
+<p>둘 다 발행 직전에 잡았습니다. 숫자를 코드가 읽어오게 두면 애초에 안 생깁니다.
+그리고 <b>화면에 실제로 보이는 값만</b> 자막에 쓰세요. 화면은 A 를 보여주는데 자막이 B 를
+말하면 보는 사람이 먼저 압니다.</p>
+
+<h2>7. 배경음악을 상수로 박지 마세요</h2>
+<p>편마다 같은 곡이 깔립니다. 시리즈가 아니라 복붙으로 보입니다.
+곡 목록을 두고 <b>최근 N편에 쓴 곡을 빼고</b> 고르게 하세요.</p>
+<p>파일이 있다고 쓸 수 있는 곡이 아닙니다. 받아둔 10곡 중 절반이 호러·드론 계열이었습니다
+(수집 검색어를 dark, suspense, ambient 로 짠 결과였습니다). 재서 거르세요.</p>
+<table><tr><th>지표</th><th>탈락선</th><th>이유</th></tr>
+<tr><td>중역(300Hz~4kHz) 비중</td><td>30% 미만</td><td>폰 스피커에서 안 들림</td></tr>
+<tr><td>0.5초 창 라우드니스 표준편차</td><td>7dB 초과</td><td>낭독을 덮었다 말았다 함</td></tr>
+<tr><td>스펙트럴 센트로이드</td><td>900Hz 미만</td><td>웅웅대는 드론 — 공포물처럼 들림</td></tr></table>
+<div class="rule"><b>크레스트(피크/RMS)로 거르지 마세요.</b> 드럼이 든 정상적인 곡이
+전부 걸립니다(로파이 비트가 13.3 이었습니다). 타악 트랜지언트는 원래 뾰족합니다.</div>
+<p>자를 시작점도 곡 길이를 보고 정하세요. "38초 지점부터"로 박아두면 22~40초짜리
+무료 음원에서 <b>무음</b>이 나갑니다.</p>
+
+<h2>8. 재는 것으로 끝내면 아무것도 안 바뀝니다</h2>
+<p>지표를 모으는 층까지만 만들어두면, 매일 숫자만 쌓이고 규격은 처음 그대로 있습니다.
+재는 값이 <b>집행까지 닿아야</b> 합니다.</p>
+<pre><code>측정 → 판정 → 집행 → 검증
+  판정: 기준선을 숫자로 정해둔다 (예: 편당 팔로워 75)
+  집행: 기준 미달이면 무엇을 바꿀지도 코드에 있어야 한다
+  검증: 바꾼 것에 기대값과 기한을 같이 적는다.
+        기대값 없는 변경은 실험이 아니라 그냥 손댄 것이다</code></pre>
+
+<h2>지금 이 계정의 숫자</h2>
+<p>남의 성공담이 아니라 진행 중인 실패까지 적는 게 이 기록의 취지라, 현재 상태도 적습니다.</p>
+<table><tr><th>편</th><th>도달</th><th>저장·공유</th></tr>
+<tr><td>1화 (큐레이션)</td><td>152</td><td>0</td></tr>
+<tr><td>2화 (큐레이션)</td><td>94</td><td>0</td></tr>
+<tr><td>3화 (화면녹화 전환)</td><td>측정 중</td><td>측정 중</td></tr></table>
+<p>두 편 연속 저장·공유가 0 이어서 포맷을 바꿨습니다. 30편까지 가서 편당 팔로워를
+직접 재고, 기준에 못 미치면 이 포맷도 버립니다. 그 결과도 여기 적겠습니다.</p>
+
+<footer>사람 없이 돌아가는 것들을 기록합니다 · <b>@moai.agent</b><br>
+이 문서는 공개 API와 공개 도구 사용법만 담고 있습니다.</footer>
+</div></body></html>
