@@ -1,0 +1,106 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>긴 영상에서 쇼츠 뽑아내기 — 돈 안 들이고 — AI로 만들어봤습니다</title>
+<meta name="description" content="12분짜리 영상을 장면 50개로 가르고, 쓸 구간을 골라 세로 영상으로 잘라내는 순서">
+<meta property="og:title" content="긴 영상에서 쇼츠 뽑아내기 — 돈 안 들이고">
+<meta property="og:description" content="12분짜리 영상을 장면 50개로 가르고, 쓸 구간을 골라 세로 영상으로 잘라내는 순서">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#08080a;--fg:#f4f1ea;--mute:#8b8f99;--acc:#ff4a1c;--line:#22252c;--card:#101318}
+body{background:var(--bg);color:var(--fg);font-family:Pretendard,-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+line-height:1.75;-webkit-font-smoothing:antialiased}
+.wrap{max-width:720px;margin:0 auto;padding:28px 22px 96px}
+header{display:flex;justify-content:space-between;align-items:baseline;
+border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:40px}
+header .s{font-weight:800;font-size:15px;letter-spacing:-.2px}
+header .n{color:var(--acc);font-weight:800;font-size:15px}
+h1{font-size:34px;line-height:1.28;font-weight:800;letter-spacing:-.6px;margin:6px 0 14px}
+h1 em{font-style:normal;color:var(--acc)}
+.lead{color:var(--mute);font-size:16px;margin-bottom:34px}
+h2{font-size:22px;font-weight:800;margin:44px 0 12px;letter-spacing:-.3px}
+h3{font-size:17px;font-weight:800;margin:26px 0 8px;color:#dfe3ea}
+p{margin:12px 0;font-size:16px;color:#d7dbe2}
+ul,ol{margin:12px 0 12px 20px}li{margin:7px 0;font-size:16px;color:#d7dbe2}
+code{background:#161a20;border:1px solid var(--line);border-radius:6px;padding:2px 7px;
+font-family:ui-monospace,Consolas,monospace;font-size:14px;color:#ffd9c9}
+pre{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;
+overflow-x:auto;margin:16px 0}
+pre code{background:none;border:0;padding:0;color:#cfd6e2;font-size:13.5px;line-height:1.7}
+.rule{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--acc);
+border-radius:12px;padding:16px 18px;margin:18px 0}
+.rule b{color:#fff}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:15px}
+th,td{border-bottom:1px solid var(--line);padding:10px 8px;text-align:left;color:#d7dbe2}
+th{color:var(--mute);font-weight:700;font-size:13px}
+.num{color:var(--acc);font-weight:800}
+a{color:var(--acc);text-decoration:none;border-bottom:1px solid rgba(255,74,28,.4)}
+footer{margin-top:70px;border-top:1px solid var(--line);padding-top:22px;color:var(--mute);font-size:14px}
+footer b{color:var(--acc)}
+.idx{display:block;background:var(--card);border:1px solid var(--line);border-radius:14px;
+padding:18px 20px;margin:12px 0;border-bottom:1px solid var(--line)}
+.idx .t{font-weight:800;font-size:18px;color:#fff}
+.idx .d{color:var(--mute);font-size:14px;margin-top:4px}
+</style></head><body><div class="wrap">
+<header><span class="s">AI로 만들어봤습니다</span><span class="n">03</span></header>
+
+<p class="lead">긴 영상을 쇼츠로 잘라주는 서비스는 보통 월 15달러부터 시작하고
+분량 제한이 붙습니다. 같은 일을 무료 도구 두 개로 하는 순서입니다.
+12분짜리 영상 기준으로 저희는 18초 걸렸습니다.</p>
+
+<h2>0. 준비물</h2>
+<p>세 가지가 필요합니다. 전부 무료입니다.</p>
+<pre><code># 윈도우
+winget install ffmpeg
+pip install yt-dlp</code></pre>
+<p>파이썬은 3.7 이상이면 됩니다. 맥이면 <code>brew install ffmpeg yt-dlp</code> 입니다.</p>
+
+<h2>1. 도구 받기</h2>
+<p><code>claude-video</code> 라는 오픈소스입니다. MIT 라이선스라 그냥 쓰면 됩니다.</p>
+<pre><code>git clone https://github.com/bradautomates/claude-video.git</code></pre>
+
+<h2>2. 영상을 장면으로 가르기</h2>
+<p>영상 파일 경로만 주면 됩니다. 장면이 바뀌는 지점을 찾아 그 순간의 화면을
+뽑아내고, 앞 장면과 거의 같은 그림은 알아서 버립니다.</p>
+<pre><code>python claude-video/skills/watch/scripts/watch.py "내영상.mp4" --no-whisper</code></pre>
+<p>저희는 11분 45초짜리 273MB 영상으로 <b>2.4초</b>가 걸렸고,
+후보 96장 중 50장이 남았습니다. 화면마다
+<code>t=07:39</code> 처럼 몇 분 몇 초인지 같이 나옵니다.</p>
+<div class="rule"><b>여기서 두 번 데었습니다.</b>
+하나, 질문을 명령어 뒤에 같이 적으면 <code>unrecognized arguments</code> 로 멈춥니다.
+이 도구는 화면과 자막을 뽑아주는 데까지가 일이고, 질문은 그 결과를 받은 AI 에게 합니다.
+둘, <code>--no-whisper</code> 를 빼면 음성을 받아쓰려고 API 키를 찾습니다.
+말이 없는 영상이거나 화면만 필요하면 이 옵션을 붙이세요 — 돈이 안 듭니다.</div>
+
+<h2>3. 어디가 쇼츠감인지 묻기</h2>
+<p>2번이 뱉은 화면들을 AI 에게 그대로 주고 물어보면 됩니다. 클로드·챗지피티 아무거나
+됩니다. 화면을 실제로 보기 때문에 말로 설명하지 않은 부분도 잡습니다.</p>
+<pre><code>이 화면들은 한 영상에서 뽑은 것입니다.
+어디가 쇼츠로 쓸 만한지 시간대로 알려주세요.</code></pre>
+<p>저희가 받은 답은 <code>07:39</code> 였습니다. 순위 카드가 먼저 뜨고 화면 전환이
+큰 구간이라는 이유까지 붙어 나왔습니다.</p>
+
+<h2>4. 그 구간만 세로로 잘라내기</h2>
+<p>ffmpeg 한 줄입니다. <code>-ss</code> 가 시작 시각, <code>-t</code> 가 길이입니다.</p>
+<pre><code>ffmpeg -ss 00:07:39 -t 30 -i "내영상.mp4" \
+  -filter_complex "[0:v]crop=1080:1080:420:0,scale=1080:1080[fg];\
+  [0:v]scale=1080:1920,boxblur=24[bg];[bg][fg]overlay=0:420" \
+  -c:a copy "쇼츠.mp4"</code></pre>
+<p>가로 영상을 세로 화면에 넣는 방법입니다. 가운데를 잘라 위에 얹고,
+빈 위아래는 같은 화면을 흐리게 깔아 채웁니다. 30초 클립 기준 <b>15.5초</b> 걸렸습니다.</p>
+<div class="rule"><b>가운데를 자르면 글씨가 잘립니다.</b>
+저희 첫 결과물은 게임 제목 왼쪽이 날아가서 "…ous Hacker Simulator" 가 됐습니다.
+<code>crop=1080:1080:420:0</code> 의 <b>420</b> 이 왼쪽에서 얼마나 떨어져서 자를지입니다.
+자막이나 제목이 왼쪽에 몰려 있으면 이 숫자를 200 쯤으로 줄이세요.</div>
+
+<h2>정리</h2>
+<table>
+<tr><td><span class="num">1</span> 장면 가르기</td><td>watch.py</td><td>2.4초</td></tr>
+<tr><td><span class="num">2</span> 구간 고르기</td><td>AI 에게 질문</td><td>즉시</td></tr>
+<tr><td><span class="num">3</span> 잘라 세로 만들기</td><td>ffmpeg</td><td>15.5초</td></tr>
+</table>
+<p>12분 영상 하나에 전부 합쳐 18초, 비용은 0원이었습니다.
+영상이 길수록 2번에서 아끼는 시간이 커집니다 — 처음부터 끝까지 볼 필요가 없어지니까요.</p>
+
+<footer>AI로 만드는 법을 기록합니다 · <b>@moai.agent</b><br>
+이 문서는 공개 API와 공개 도구 사용법만 담고 있습니다.</footer>
+</div></body></html>
